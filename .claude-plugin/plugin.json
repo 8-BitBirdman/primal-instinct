@@ -1,0 +1,34 @@
+{
+  "name": "primal",
+  "description": "Ultra-compressed communication mode. Cuts ~75% of tokens while keeping full technical accuracy by speaking like a primal.",
+  "author": {
+    "name": "Julius Brussee",
+    "url": "https://github.com/8-BitBirdman"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/primal-activate.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading primal mode..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/primal-mode-tracker.js\"",
+            "timeout": 5,
+            "statusMessage": "Tracking primal mode..."
+          }
+        ]
+      }
+    ]
+  }
+}

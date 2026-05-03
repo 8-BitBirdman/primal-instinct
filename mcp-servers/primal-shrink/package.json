@@ -1,0 +1,30 @@
+{
+  "name": "primal-shrink",
+  "version": "0.1.0",
+  "description": "MCP proxy that compresses prose fields (tool descriptions, etc.) using primal rules. Same accuracy, fewer context tokens.",
+  "license": "MIT",
+  "homepage": "https://github.com/8-BitBirdman/primal-instinct",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/8-BitBirdman/primal-instinct.git",
+    "directory": "mcp-servers/primal-shrink"
+  },
+  "author": "Julius Brussee",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "primal",
+    "proxy",
+    "tokens"
+  ],
+  "main": "compress.js",
+  "bin": {
+    "primal-shrink": "index.js"
+  },
+  "files": [
+    "index.js",
+    "compress.js",
+    "README.md"
+  ]
+}

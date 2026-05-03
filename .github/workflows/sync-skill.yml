@@ -1,0 +1,114 @@
+name: Sync SKILL.md and rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - skills/primal/SKILL.md
+      - skills/primalcrew/SKILL.md
+      - agents/primalcrew-*.md
+      - rules/primal-activate.md
+      - primal-compress/SKILL.md
+      - primal-compress/scripts/**
+
+concurrency:
+  group: sync-skill
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Pull latest before making changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+
+      - name: Sync SKILL.md copies
+        run: |
+          mkdir -p primal plugins/primal/skills/primal .cursor/skills/primal .windsurf/skills/primal
+          cp skills/primal/SKILL.md primal/SKILL.md
+          cp skills/primal/SKILL.md plugins/primal/skills/primal/SKILL.md
+          cp skills/primal/SKILL.md .cursor/skills/primal/SKILL.md
+          cp skills/primal/SKILL.md .windsurf/skills/primal/SKILL.md
+
+      - name: Sync compress skill
+        run: |
+          # Sync to skills/primal-compress (main location for Gemini CLI)
+          rm -rf skills/primal-compress/scripts
+          mkdir -p skills/primal-compress
+          cp primal-compress/SKILL.md skills/primal-compress/SKILL.md
+          sed -i 's/^name: primal-compress$/name: primal-compress/' skills/primal-compress/SKILL.md
+          sed -i "s|The compression scripts live in \`primal-compress/scripts/\`|This SKILL.md lives alongside \`scripts/\` in the same directory.|" skills/primal-compress/SKILL.md
+          cp -r primal-compress/scripts skills/primal-compress/scripts
+          rm -rf skills/primal-compress/scripts/__pycache__
+
+      - name: Sync compress skill to plugin
+        run: |
+          # Copy SKILL.md and patch name + process instructions for plugin context
+          mkdir -p plugins/primal/skills/primal-compress
+          cp primal-compress/SKILL.md plugins/primal/skills/primal-compress/SKILL.md
+          sed -i 's/^name: primal-compress$/name: primal-compress/' plugins/primal/skills/primal-compress/SKILL.md
+          # Copy scripts verbatim
+          rm -rf plugins/primal/skills/primal-compress/scripts
+          cp -r primal-compress/scripts plugins/primal/skills/primal-compress/scripts
+          rm -rf plugins/primal/skills/primal-compress/scripts/__pycache__
+
+      - name: Sync primalcrew skill + agents to plugin
+        run: |
+          mkdir -p plugins/primal/skills/primalcrew plugins/primal/agents
+          cp skills/primalcrew/SKILL.md plugins/primal/skills/primalcrew/SKILL.md
+          cp agents/primalcrew-investigator.md plugins/primal/agents/primalcrew-investigator.md
+          cp agents/primalcrew-builder.md plugins/primal/agents/primalcrew-builder.md
+          cp agents/primalcrew-reviewer.md plugins/primal/agents/primalcrew-reviewer.md
+
+      - name: Rebuild primal.skill ZIP
+        run: cd skills && zip -r ../primal.skill primal/
+
+      - name: Sync auto-activation rules
+        run: |
+          BODY="rules/primal-activate.md"
+
+          # Cline + Copilot — no frontmatter, direct copy
+          mkdir -p .clinerules .github
+          cp "$BODY" .clinerules/primal.md
+          cp "$BODY" .github/copilot-instructions.md
+
+          # Cursor — needs alwaysApply frontmatter
+          mkdir -p .cursor/rules
+          printf '%s\n' '---' 'description: "Primal Instinct mode — terse communication, ~75% fewer tokens, full technical accuracy"' 'alwaysApply: true' '---' '' > .cursor/rules/primal.mdc
+          cat "$BODY" >> .cursor/rules/primal.mdc
+
+          # Windsurf — needs always_on frontmatter
+          mkdir -p .windsurf/rules
+          printf '%s\n' '---' 'trigger: always_on' '---' '' > .windsurf/rules/primal.md
+          cat "$BODY" >> .windsurf/rules/primal.md
+
+      - name: Commit and push if changed
+        run: |
+          git add \
+            primal/SKILL.md \
+            skills/primal-compress/ \
+            plugins/primal/skills/primal-compress/ \
+            plugins/primal/skills/primal/SKILL.md \
+            plugins/primal/skills/primalcrew/SKILL.md \
+            plugins/primal/agents/primalcrew-investigator.md \
+            plugins/primal/agents/primalcrew-builder.md \
+            plugins/primal/agents/primalcrew-reviewer.md \
+            .cursor/skills/primal/SKILL.md \
+            .windsurf/skills/primal/SKILL.md \
+            primal.skill \
+            .clinerules/primal.md \
+            .github/copilot-instructions.md \
+            .cursor/rules/primal.mdc \
+            .windsurf/rules/primal.md
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: sync SKILL.md copies and auto-activation rules [skip ci]"
+          git push

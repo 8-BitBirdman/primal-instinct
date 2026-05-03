@@ -1,0 +1,20 @@
+{
+  "name": "primal-repo",
+  "interface": {
+    "displayName": "Primal Repo"
+  },
+  "plugins": [
+    {
+      "name": "primal",
+      "source": {
+        "source": "local",
+        "path": "./plugins/primal"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

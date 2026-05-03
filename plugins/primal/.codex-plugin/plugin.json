@@ -1,0 +1,39 @@
+{
+  "name": "primal",
+  "version": "0.1.0",
+  "description": "Ultra-compressed communication mode. Cut filler. Keep technical accuracy.",
+  "author": {
+    "name": "Julius Brussee",
+    "url": "https://github.com/8-BitBirdman"
+  },
+  "homepage": "https://github.com/8-BitBirdman/primal-instinct",
+  "repository": "https://github.com/8-BitBirdman/primal-instinct",
+  "license": "MIT",
+  "keywords": [
+    "productivity",
+    "communication",
+    "brevity",
+    "writing"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Primal",
+    "shortDescription": "Talk like primal. Cut filler. Keep technical accuracy.",
+    "longDescription": "Ultra-compressed communication mode for Codex. Use fewer words. Keep exact technical substance.",
+    "developerName": "Julius Brussee",
+    "category": "Productivity",
+    "capabilities": [
+      "Write"
+    ],
+    "websiteURL": "https://github.com/8-BitBirdman/primal-instinct",
+    "privacyPolicyURL": "https://github.com/8-BitBirdman/primal-instinct/blob/main/README.md",
+    "termsOfServiceURL": "https://github.com/8-BitBirdman/primal-instinct/blob/main/LICENSE",
+    "defaultPrompt": [
+      "Use primal mode. Cut filler. Keep technical accuracy."
+    ],
+    "composerIcon": "./assets/primal-small.svg",
+    "logo": "./assets/primal.svg",
+    "screenshots": [],
+    "brandColor": "#6B7280"
+  }
+}

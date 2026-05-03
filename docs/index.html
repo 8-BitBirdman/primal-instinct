@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primal Instinct | Lithic Token Compression</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Ultra-premium dark palette with sunset accents */
+  --bg: #030303;
+  --bg-elevated: #0a0a0a;
+  --border: #161616;
+  --border-hover: #262626;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a1a1a1;
+  --text-tertiary: #404040;
+  --accent: #ff4d00;
+  --accent-secondary: #ff8c00;
+  --accent-glow: rgba(255, 77, 0, 0.15);
+  
+  --diff-removed: rgba(255, 77, 0, 0.1);
+  --diff-removed-text: #ff6b3d;
+  --diff-kept: rgba(255, 255, 255, 0.03);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg); color: var(--text-primary);
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ctext y='20' font-size='20'%3E🥩%3C/text%3E%3C/svg%3E"), auto;
+}
+
+::selection { background: var(--accent); color: white; }
+
+/* --- DYNAMIC BACKGROUND --- */
+.bg-mesh {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: 
+    radial-gradient(at 0% 0%, rgba(255, 77, 0, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 140, 0, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(255, 77, 0, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(255, 140, 0, 0.03) 0px, transparent 50%);
+}
+
+.bg-grid {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 90%);
+}
+
+.cursor-glow {
+  position: fixed; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  top: 0; left: 0; transform: translate(-50%, -50%);
+  pointer-events: none; z-index: 0; transition: opacity 0.5s ease;
+  mix-blend-mode: screen;
+}
+
+/* LAYOUT */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+.section { padding: 120px 0; position: relative; }
+.section-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; color: var(--accent); letter-spacing: 0.2em;
+  margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
+}
+.section-badge::after { content: ""; height: 1px; width: 40px; background: var(--accent); opacity: 0.3; }
+
+.title-large { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; letter-spacing: -0.05em; margin-bottom: 24px; line-height: 1.05; }
+.text-lead { font-size: 1.25rem; color: var(--text-secondary); max-width: 650px; line-height: 1.6; font-weight: 300; }
+
+/* HERO */
+.hero { min-height: 95vh; display: flex; flex-direction: column; justify-content: center; position: relative; padding-top: 80px; }
+.hero-label {
+  display: inline-flex; align-items: center; gap: 12px; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; color: var(--text-secondary); text-decoration: none;
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: 100px;
+  margin-bottom: 40px; background: rgba(255,255,255,0.02); backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hero-label:hover { border-color: var(--accent); color: var(--text-primary); transform: translateY(-2px); }
+.hero h1 {
+  font-size: clamp(3.5rem, 12vw, 9rem); font-weight: 800; letter-spacing: -0.07em;
+  line-height: 0.85; margin-bottom: 32px;
+  background: linear-gradient(to bottom, #fff 40%, #555);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-accent { color: var(--accent); -webkit-text-fill-color: var(--accent); }
+
+.hero-cta { margin-top: 56px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.btn-primary {
+  background: var(--text-primary); color: var(--bg); border: none;
+  padding: 16px 32px; border-radius: 12px; font-weight: 700; font-size: 1rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-primary:hover { transform: scale(1.05); background: var(--accent); color: #fff; }
+
+.cli-bar {
+  display: flex; align-items: center; background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border); border-radius: 12px; padding: 12px 12px 12px 24px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+}
+.cli-code { color: var(--text-secondary); margin-right: 24px; }
+.cli-copy { background: none; border: none; color: var(--accent); cursor: pointer; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* FEATURES BENTO */
+.feature-grid {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; margin-top: 64px;
+}
+.feature-card {
+  grid-column: span 4; background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 24px; padding: 48px; transition: all 0.4s; position: relative; overflow: hidden;
+}
+.feature-card:hover { border-color: var(--accent); transform: translateY(-8px); }
+.feature-card.large { grid-column: span 8; }
+.feature-icon { font-size: 2.5rem; margin-bottom: 32px; }
+.feature-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; }
+.feature-text { color: var(--text-secondary); line-height: 1.6; font-weight: 300; }
+
+@media (max-width: 900px) {
+  .feature-card { grid-column: span 12 !important; }
+}
+
+/* THE DIFF VIEWER */
+.diff-window {
+  margin-top: 64px; background: #000; border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+}
+.diff-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; background: #080808; border-bottom: 1px solid var(--border);
+}
+.diff-title { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-tertiary); }
+.diff-title span { color: var(--accent); margin-left: 12px; font-weight: 700; }
+
+.diff-content { padding: 48px; font-size: 1.3rem; line-height: 1.7; font-weight: 300; }
+.token-removed { text-decoration: line-through; color: var(--diff-removed-text); background: var(--diff-removed); padding: 0 4px; border-radius: 4px; transition: all 0.3s; opacity: 1; }
+.token-removed.hidden { opacity: 0; transform: scale(0.9); pointer-events: none; display: inline-block; width: 0; margin: 0; padding: 0; }
+.token-kept { color: var(--text-primary); font-weight: 500; }
+
+.diff-actions { display: flex; gap: 12px; padding: 0 32px 32px; justify-content: flex-end; }
+.mode-btn {
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-secondary);
+  padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+}
+.mode-btn.active { background: #fff; color: #000; border-color: #fff; }
+
+/* TERMINAL INTERFACE */
+.terminal {
+  background: #000; border: 1px solid var(--border); border-radius: 16px;
+  font-family: 'JetBrains Mono', monospace; padding: 0; overflow: hidden;
+}
+.term-head { background: #0a0a0a; padding: 12px 20px; display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #222; }
+.term-body { padding: 32px; height: 300px; overflow-y: auto; font-size: 0.9rem; color: var(--text-secondary); }
+.term-input-line { display: flex; gap: 12px; margin-top: 12px; }
+.prompt { color: var(--accent); }
+.term-field { background: none; border: none; color: #fff; outline: none; flex: 1; font-family: inherit; font-size: inherit; }
+
+/* FOOTER */
+.footer {
+  border-top: 1px solid var(--border); padding: 80px 0; margin-top: 120px;
+  display: flex; justify-content: space-between; align-items: center;
+  color: var(--text-tertiary); font-size: 0.9rem;
+}
+.footer a { color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+.footer a:hover { color: var(--accent); }
+
+/* ANIMATIONS */
+.reveal { opacity: 0; transform: translateY(40px); transition: all 1s cubic-bezier(0.2, 1, 0.3, 1); }
+.reveal.active { opacity: 1; transform: translateY(0); }
+
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+<div class="cursor-glow" id="glow"></div>
+
+<div class="container">
+  <section class="hero">
+    <div class="reveal">
+      <a href="https://github.com/8-BitBirdman/primal-instinct" class="hero-label">
+        <span>v1.4.0</span>
+        <span style="opacity: 0.3">|</span>
+        <span>8-BitBirdman / primal-instinct</span>
+      </a>
+      <h1>raw logic.<br><span class="hero-accent">no filler.</span></h1>
+      <p class="text-lead">The Lithic Protocol for AI agents. Anchors Claude Code & Cursor in ultra-efficient, token-minimal patterns without sacrificing technical precision.</p>
+      
+      <div class="hero-cta">
+        <button class="btn-primary" onclick="scrollToId('install')">Initialize Protocol</button>
+        <div class="cli-bar">
+          <span class="cli-code">npx skills add primal-instinct</span>
+          <button class="cli-copy" onclick="copyText('npx skills add 8-BitBirdman/primal-instinct')">Copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="diff">
+    <div class="reveal">
+      <span class="section-badge">Optimization Engine</span>
+      <h2 class="title-large">The Lithic Payload</h2>
+      <p class="text-lead">Watch conversational drift evaporate. Primal Instinct identifies semantic cores and annihilates conversational overhead.</p>
+
+      <div class="diff-window">
+        <div class="diff-nav">
+          <div class="diff-title">INPUT_BUFFER: REACT_DEBUG_LOG <span>-74% TOKENS</span></div>
+          <div style="display: flex; gap: 4px;"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        <div class="diff-content" id="diffDisplay">
+          <span class="token-removed">"The reason your React component is re-rendering is likely because you're creating a</span> <span class="token-kept">New</span> <span class="token-kept">object ref</span><span class="token-removed">erence on</span> <span class="token-kept">each render</span><span class="token-removed">. When you pass an inline object as a prop, React's shallow comparison sees it as a different object every time, which triggers a</span> <span class="token-kept">= re-render.</span> <span class="token-removed">I'd recommend using</span> <span class="token-kept">Wrap in <code>useMemo</code>.</span>
+        </div>
+        <div class="diff-actions">
+          <button class="mode-btn active" onclick="setMode('diff', this)">Show Diff</button>
+          <button class="mode-btn" onclick="setMode('primal', this)">Primal Only</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="reveal">
+      <span class="section-badge">Core Capabilities</span>
+      <h2 class="title-large">Engineered for Speed.</h2>
+      
+      <div class="feature-grid">
+        <div class="feature-card large">
+          <div class="feature-icon">⚓</div>
+          <div class="feature-title">Semantic Anchoring</div>
+          <div class="feature-text">Most agents "drift" back to verbosity mid-session. Primal Instinct uses a dual-hook system to anchor behavior per-turn, ensuring the Lithic pattern holds for thousands of lines of context.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <div class="feature-title">Auto-Clarity</div>
+          <div class="feature-text">The protocol temporarily deactivates for security warnings or destructive actions, prioritizing safety over terseness.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🧱</div>
+          <div class="feature-title">Structure First</div>
+          <div class="feature-text">Retains headings, tables, and lists. Primal is about prose reduction, not information loss.</div>
+        </div>
+        <div class="feature-card large">
+          <div class="feature-icon">🥩</div>
+          <div class="feature-title">The Ecosystem</div>
+          <div class="feature-text">Integrates seamlessly with <b>primal-mem</b> for context compression and <b>primalcrew</b> for surgical sub-agent delegation. One install, total efficiency.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install">
+    <div class="reveal">
+      <span class="section-badge">Deployment</span>
+      <h2 class="title-large">Go Primal.</h2>
+      <p class="text-lead" style="margin-bottom: 48px;">One command. Every agent. Pure efficiency.</p>
+
+      <div class="terminal">
+        <div class="term-head">
+          <div class="dot" style="background:#ff5f56"></div>
+          <div class="dot" style="background:#ffbd2e"></div>
+          <div class="dot" style="background:#27c93f"></div>
+        </div>
+        <div class="term-body" id="term">
+          <div style="color: #444"># establishing secure link to 8-BitBirdman...</div>
+          <div style="color: #444"># detecting local agents (Cursor, Windsurf, Claude Code)...</div>
+          <div>READY.</div>
+          <div class="term-input-line">
+            <span class="prompt">❯</span>
+            <input type="text" class="term-field" id="termInput" placeholder="Initialize protocol..." autofocus autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="container footer">
+    <div>&copy; 2026 Primal Instinct. Built for speed.</div>
+    <div style="display: flex; gap: 32px;">
+      <a href="https://github.com/8-BitBirdman/primal-instinct">GitHub</a>
+      <a href="https://github.com/8-BitBirdman/primalmem">Memory</a>
+      <a href="https://github.com/8-BitBirdman/primalcrew">Crew</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+// Scroll Reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('active');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Cursor Glow
+const glow = document.getElementById('glow');
+document.addEventListener('mousemove', (e) => {
+  glow.style.left = e.clientX + 'px';
+  glow.style.top = e.clientY + 'px';
+});
+
+// Diff Toggle
+function setMode(mode, btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const tokens = document.querySelectorAll('.token-removed');
+  tokens.forEach(t => {
+    if (mode === 'primal') t.classList.add('hidden');
+    else t.classList.remove('hidden');
+  });
+}
+
+// Terminal Logic
+const termInput = document.getElementById('termInput');
+const term = document.getElementById('term');
+termInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && termInput.value.trim()) {
+    const val = termInput.value;
+    const line = document.createElement('div');
+    line.innerHTML = `<span class="prompt">❯</span> ${val}`;
+    termInput.parentElement.before(line);
+    
+    const resp = document.createElement('div');
+    resp.style.color = '#ff8c00';
+    resp.style.marginTop = '4px';
+    resp.style.marginBottom = '12px';
+    resp.textContent = "Protocol initialized. Verbosity annihilated. Brain still big.";
+    termInput.parentElement.before(resp);
+    
+    termInput.value = '';
+    term.scrollTop = term.scrollHeight;
+  }
+});
+
+// Utils
+function copyText(txt) {
+  navigator.clipboard.writeText(txt);
+  alert("Copied to clipboard.");
+}
+function scrollToId(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>

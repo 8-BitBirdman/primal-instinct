@@ -1,0 +1,6 @@
+interface:
+  display_name: "Primal"
+  short_description: "Talk like primal. Cut filler. Keep technical accuracy."
+  icon_small: "./assets/primal-small.svg"
+  icon_large: "./assets/primal.svg"
+  default_prompt: "Use $primal to answer briefly, cut filler, and preserve exact technical substance."
