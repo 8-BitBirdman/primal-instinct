@@ -58,7 +58,52 @@ Primal Instinct is optimized for the [Claude Code](https://docs.anthropic.com/en
 npx skills add 8-BitBirdman/primal-instinct
 ```
 
-### 2. The Universal Installer (Cursor, Windsurf, Cline, etc.)
+### 2. opencode (Native Skills + Plugin)
+
+[opencode](https://opencode.ai) supports primal-instinct natively via skills, slash commands, and a plugin hook.
+
+```bash
+# Clone repo anywhere
+git clone https://github.com/8-BitBirdman/primal-instinct.git ~/primal-instinct
+
+# Register skills + commands globally
+mkdir -p ~/.config/opencode/command ~/.config/opencode/plugin
+ln -sf ~/primal-instinct/commands/*.toml ~/.config/opencode/command/
+```
+
+Add to `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [
+      "~/primal-instinct/skills",
+      "~/primal-instinct/primal-compress"
+    ]
+  }
+}
+```
+
+For **always-on** ultra mode, drop this plugin into `~/.config/opencode/plugin/primal-always-on.js`:
+
+```js
+const PRIMAL_RULES = `[PRIMAL ULTRA — ALWAYS ON]
+Respond terse. Drop articles, filler, hedging, pleasantries. Fragments OK.
+Abbreviate prose (DB/auth/cfg/fn/impl). Arrows for causality (X → Y).
+Code, identifiers, errors, paths: unchanged exact.
+Off only on explicit "stop primal" / "normal mode".`
+
+export default async () => ({
+  "chat.params": async (_input, output) => {
+    output.system = output.system ? `${PRIMAL_RULES}\n\n${output.system}` : PRIMAL_RULES
+  },
+})
+```
+
+Restart opencode. See [`docs/install-opencode.md`](docs/install-opencode.md) for full details.
+
+### 3. The Universal Installer (Cursor, Windsurf, Cline, etc.)
 Automatically detects all installed agents on your machine and injects the Primal Instinct rules.
 
 ```bash
