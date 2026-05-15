@@ -101,25 +101,49 @@ Reference it in `opencode.json`:
 
 ### Layer B — Plugin Hook
 
-Inject the rule into every chat's system message. Create `~/.config/opencode/plugin/primal-always-on.js`:
+Inject the rule into every chat's system message — covers empty projects, projects with overridden `instructions:`, subagents, and compaction. Create `~/.config/opencode/plugin/primal-always-on.js`:
 
 ```js
-const PRIMAL_RULES = `[PRIMAL ULTRA — ALWAYS ON]
-Respond terse. Drop articles, filler, hedging, pleasantries. Fragments OK.
-Abbreviate prose (DB/auth/cfg/fn/impl). Arrows for causality (X → Y).
-Code, identifiers, errors, paths: unchanged exact.
+const PRIMAL_RULES = `[PRIMAL ULTRA — ALWAYS ON | system-injected]
+Respond terse. Drop articles (a/an/the), filler (just/really/basically), hedging (might/could/perhaps), pleasantries.
+Fragments OK. Short synonyms. Code, identifiers, error strings, paths: unchanged exact.
+Abbreviate prose only (DB/auth/cfg/req/res/fn/impl). Arrows for causality (X → Y).
 Pattern: [thing] [action] [reason]. [next].
-Drop primal only for: security warnings, irreversible ops, multi-step where order risks misread. Resume after.
-Off only on explicit "stop primal" / "normal mode".`
+Drop primal temporarily ONLY for: security warnings, irreversible/destructive ops, multi-step where fragment order risks misread, user asks to clarify.
+Resume immediately after.
+Off only on explicit "stop primal" / "normal mode" from the user.`
+
+const inject = (existing) =>
+  existing && existing.includes("PRIMAL ULTRA — ALWAYS ON")
+    ? existing
+    : existing
+      ? `${PRIMAL_RULES}\n\n${existing}`
+      : PRIMAL_RULES
 
 export default async () => ({
   "chat.params": async (_input, output) => {
-    output.system = output.system ? `${PRIMAL_RULES}\n\n${output.system}` : PRIMAL_RULES
+    output.system = inject(output.system)
+  },
+  "experimental.chat.system.transform": async (_input, output) => {
+    if (typeof output.system === "string") {
+      output.system = inject(output.system)
+    } else if (Array.isArray(output.system)) {
+      const hasPrimal = output.system.some(
+        (p) => typeof p === "string" && p.includes("PRIMAL ULTRA — ALWAYS ON"),
+      )
+      if (!hasPrimal) output.system.unshift(PRIMAL_RULES)
+    }
   },
 })
 ```
 
 opencode auto-discovers `.js`/`.ts` files in `~/.config/opencode/plugin/` — no config entry needed.
+
+Dual-hook design ensures coverage of:
+- Empty new projects with no local config
+- Projects that override `instructions:` in their own `opencode.json`
+- Subagent spawns (build/plan/general/explore)
+- Compaction, title, and summary internal agents
 
 ---
 

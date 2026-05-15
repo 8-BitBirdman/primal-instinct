@@ -88,15 +88,19 @@ Add to `~/.config/opencode/opencode.json`:
 For **always-on** ultra mode, drop this plugin into `~/.config/opencode/plugin/primal-always-on.js`:
 
 ```js
-const PRIMAL_RULES = `[PRIMAL ULTRA — ALWAYS ON]
+const PRIMAL_RULES = `[PRIMAL ULTRA — ALWAYS ON | system-injected]
 Respond terse. Drop articles, filler, hedging, pleasantries. Fragments OK.
 Abbreviate prose (DB/auth/cfg/fn/impl). Arrows for causality (X → Y).
 Code, identifiers, errors, paths: unchanged exact.
 Off only on explicit "stop primal" / "normal mode".`
 
+const inject = (s) =>
+  s && s.includes("PRIMAL ULTRA — ALWAYS ON") ? s : s ? `${PRIMAL_RULES}\n\n${s}` : PRIMAL_RULES
+
 export default async () => ({
-  "chat.params": async (_input, output) => {
-    output.system = output.system ? `${PRIMAL_RULES}\n\n${output.system}` : PRIMAL_RULES
+  "chat.params": async (_i, o) => { o.system = inject(o.system) },
+  "experimental.chat.system.transform": async (_i, o) => {
+    if (typeof o.system === "string") o.system = inject(o.system)
   },
 })
 ```
